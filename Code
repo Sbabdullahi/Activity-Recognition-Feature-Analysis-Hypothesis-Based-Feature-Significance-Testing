@@ -1,0 +1,58 @@
+#Activity Recognition Feature Analysis: Hypothesis-Based Feature Significance Testing
+import pandas as pd
+import numpy as np
+from scipy.stats import f_oneway
+
+
+
+# Load the dataset from the specified directory
+file_path = r'E:\ActivityDataSetLabel.csv'
+data = pd.read_csv(file_path, delimiter=',')  # Use delimiter=',' for CSV files
+
+
+# Extract the required columns and the target variable
+columns_of_interest = ['Head_Rx', 'Head_Ry', 'Head_Rz', 'L_Wrist_Rx', 'L_Wrist_Ry', 'L_Wrist_Rz', 'L_Foot_Rx', 'L_Foot_Ry', 'L_Foot_Rz']
+target_variable = 'Activity'  # Assuming the target variable is named 'Activity'
+sample_data = data[columns_of_interest]
+target_data = data[target_variable]
+
+
+#Hypothesis testing
+#"Features with low variance contribute to reduced model accuracy and increased misclassification rates in the classification of activities"
+
+
+
+# Perform ANOVA test for each variable across the actions
+anova_results = {}
+for column in columns_of_interest:
+    groups = [sample_data[column][target_data == action] for action in target_data.unique()]
+    f_statistic, p_value = f_oneway(*groups)
+    anova_results[column] = (f_statistic, p_value)
+
+# Print the ANOVA results
+for column, (f_statistic, p_value) in anova_results.items():
+    print(f"ANOVA results for {column}: F-statistic = {f_statistic}, p-value = {p_value}")
+
+
+# Determine statistical significance
+alpha = 0.05
+significant_variables = [column for column, (f_statistic, p_value) in anova_results.items() if p_value < alpha]
+
+
+print("\nSignificant variables at alpha level of 0.05:")
+for variable in significant_variables:
+    print(variable)
+
+
+
+# Plotting the variances of significant features
+significant_variances = [variances[variable] for variable in significant_variables]
+
+plt.figure(figsize=(10, 6))
+plt.bar(significant_variables, significant_variances, color='lightgreen')
+plt.xlabel('Significant Features')
+plt.ylabel('Variance')
+plt.title('Variance of Significant Features')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
